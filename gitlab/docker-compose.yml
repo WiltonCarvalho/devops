@@ -1,0 +1,42 @@
+version: "3.8"
+networks:
+  traefik:
+    external: 
+      name: traefik
+services:
+  gitlab:
+    image: gitlab/gitlab-ce
+    container_name: gitlab
+    ports:
+      - "4222:22"
+      # - "80:80"
+      # - "443:443"
+    volumes:
+      - $PWD/data:/var/opt/gitlab
+      - $PWD/logs:/var/log/gitlab
+      - $PWD/config:/etc/gitlab
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://gitlab.example.com/'
+        gitlab_rails['gitlab_shell_ssh_port'] = 4222
+        letsencrypt['enable'] = false
+        nginx['listen_port'] = 80
+        nginx['listen_https'] = false
+      # registry_external_url 'https://registry.example.com'
+      # registry_nginx['listen_port'] = 80
+      # registry_nginx['listen_https'] = false
+      TZ: America/Sao_Paulo
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "7"
+        max-size: "10m"
+        tag: "gitlab"
+    networks:
+      traefik:
+  # gitlab-runner:
+  #   image: gitlab/gitlab-runner:alpine
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 4
