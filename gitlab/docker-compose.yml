@@ -30,8 +30,8 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-file: "7"
-        max-size: "10m"
+        max-file: "5"
+        max-size: "5m"
         tag: "gitlab"
     networks:
       traefik:

@@ -18,7 +18,9 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "1m"
+        max-file: "5"
+        max-size: "5m"
+        tag: "{{.DaemonName}}.{{.ImageName}}"
 
   loki:
     image: grafana/loki:2.3.0
@@ -36,7 +38,9 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "1m"
+        max-file: "5"
+        max-size: "5m"
+        tag: "{{.DaemonName}}.{{.ImageName}}"
 
   fluent-bit:
     #image: grafana/fluent-bit-plugin-loki:2.3.0-amd64
@@ -79,7 +83,8 @@ services:
     # logging:
     #   driver: "json-file"
     #   options:
-    #     max-size: "1m"
+    #     max-file: "5"
+    #     max-size: "5m"
     #     tag: "{{.DaemonName}}.{{.ImageName}}"
 
 networks:
