@@ -8,6 +8,15 @@ services:
     container_name: nexus
     user: "1001"
     image: sonatype/nexus3:3.34.1
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.80'
+          memory: 128M
+        reservations:
+          memory: 128M
     ports:
       - "8081:8081"
     environment: 
