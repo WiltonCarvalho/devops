@@ -1,0 +1,15 @@
+tls:
+  certificates:
+    - certFile: /etc/certs/example.com.crt
+      keyFile: /etc/certs/example.com.key
+      stores:
+        - default
+    # Note that since no store is defined,
+    # the certificate below will be stored in the `default` store.
+    # - certFile: /etc/certs/example2.com.crt
+    #   keyFile: /etc/certs/example2.com.key
+  options:
+    default:
+      minVersion: VersionTLS12
+      cipherSuites:
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256

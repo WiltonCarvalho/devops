@@ -1,0 +1,10 @@
+gitlab/*/*
+!gitlab/*/empty
+jenkins/jenkins/*
+!jenkins/jenkins/empty
+ldap-server/*/*
+!ldap-server/*/empty
+loki/data/*/*
+!loki/data/*/*/empty
+nexus/nexus-data/*
+nexus/nexus-data/empty

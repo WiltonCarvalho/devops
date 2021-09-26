@@ -1,0 +1,106 @@
+- hosts: 127.0.0.1
+  connection: local
+  gather_facts: no
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  handlers:
+    - name: 'restart rsyslog'
+      service:
+        name: rsyslog
+        state: restarted
+    - name: 'restart docker'
+      service:
+        name: docker
+        state: restarted
+    - name: 'update grub'
+      shell: >
+        update-grub
+  tasks:
+    - name: '/etc/default/grub.d/99-cgroup.cfg'
+      copy:
+        dest: "/etc/default/grub.d/99-cgroup.cfg"
+        content: |
+          GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX cgroup_enable=memory swapaccount=1"
+        mode: 0644
+        owner: root
+        group: root
+      notify: update grub
+
+    - name: 'install packages'
+      apt:
+        name: "{{ packages }}"
+        update_cache: no
+      vars:
+        packages:
+        - docker.io
+        - linux-virtual-hwe-20.04
+
+    - name: 'adding user docker-user to group docker'
+      user:
+        name: docker-user
+        shell: /bin/bash
+        groups: docker
+        append: yes
+
+    - name: '/etc/docker/daemon.json'
+      copy:
+        dest: "/etc/docker/daemon.json"
+        content: |
+          {% raw %}
+          {
+            "exec-opts": ["native.cgroupdriver=systemd"],
+            "log-driver": "journald",
+            "log-opts": {
+              "tag": "{{.DaemonName}}.{{.ImageName}}"
+            },
+            "storage-driver": "overlay2",
+            "live-restore": false,
+            "metrics-addr": "0.0.0.0:9323"
+          }
+          {% endraw %}
+        mode: 0644
+        owner: root
+        group: root
+      notify: restart docker
+
+    - name: 'Add rsyslog 20-docker.conf'
+      copy:
+        dest: "/etc/rsyslog.d/20-docker.conf"
+        content: |
+          $template CUSTOM_LOGS,"/var/log/docker/%programname%.log"
+          if $syslogtag startswith 'docker' then ?CUSTOM_LOGS
+          & stop
+        mode: 0644
+        owner: root
+        group: root
+      notify: restart rsyslog
+
+    - name: 'Add /etc/logrotate.d/docker'
+      copy:
+        dest: "/etc/logrotate.d/docker"
+        content: |
+          /var/log/docker/*.log
+          {
+            rotate 10
+            size 10M
+            missingok
+            notifempty
+            compress
+            delaycompress
+            sharedscripts
+            postrotate
+              /usr/lib/rsyslog/rsyslog-rotate
+            endscript
+          }
+        mode: 0644
+        owner: root
+        group: root
+
+    - name: 'Docker Compose'
+      get_url:
+        url: https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64
+        #checksum: sha256:https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64.sha256
+        dest: /usr/local/bin/docker-compose
+        mode: 0755
+        owner: root
+        group: root

@@ -1,0 +1,35 @@
+ARG DEBIAN_FRONTEND=noninteractive
+ARG ARCH=
+FROM prom/prometheus:v2.21.0 as build
+FROM debian:stable
+RUN apt-get update &&  \
+    apt-get install -y ca-certificates curl && \
+    rm -f /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb /var/cache/apt/*.bin || true
+COPY --from=build /bin/prometheus /bin/prometheus
+COPY --from=build /bin/promtool /bin/promtool
+COPY --from=build /etc/prometheus/prometheus.yml  /etc/prometheus/prometheus_orig.yml
+COPY --from=build /usr/share/prometheus/console_libraries/ /usr/share/prometheus/console_libraries/
+COPY --from=build /usr/share/prometheus/consoles/ /usr/share/prometheus/consoles/
+COPY --from=build /LICENSE /LICENSE
+COPY --from=build /NOTICE /NOTICE
+COPY --from=build /npm_licenses.tar.bz2 /npm_licenses.tar.bz2
+
+RUN ln -s /usr/share/prometheus/console_libraries /usr/share/prometheus/consoles/ /etc/prometheus/
+RUN mkdir -p /prometheus && \
+    chown -R nobody:nogroup /etc/prometheus /prometheus
+
+COPY --chown=nobody:nogroup prometheus.yml /etc/prometheus/
+COPY --chown=nobody:nogroup alert.rules /etc/prometheus/
+
+USER       nobody
+EXPOSE     9090
+VOLUME     [ "/prometheus" ]
+WORKDIR    /prometheus
+ENTRYPOINT [ "/bin/prometheus" ]
+CMD        ["--config.file=/etc/prometheus/prometheus.yml", \
+            "--storage.tsdb.path=/prometheus", \
+            "--storage.tsdb.retention.time=10h", \
+            "--web.enable-lifecycle", \
+            "--web.external-url=http://localhost:90/", \
+            "--web.console.libraries=/usr/share/prometheus/console_libraries", \
+            "--web.console.templates=/usr/share/prometheus/consoles"]

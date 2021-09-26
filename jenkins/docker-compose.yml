@@ -1,0 +1,37 @@
+version: "3.8"
+networks:
+  proxy:
+    external: 
+      name: proxy
+services:
+  jenkins:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    image: jenkins:lts
+    #privileged: true
+    user: "1001:131"
+    ports:
+      - 8080:8080
+    #   - 50000:50000
+    container_name: jenkins
+    volumes:
+      - $PWD/jenkins:/var/jenkins_home
+      #- /var/run/docker.sock:/var/run/docker.sock
+      #- /usr/bin/docker:/usr/bin/docker
+    environment: 
+      - TZ=America/Sao_Paulo
+    healthcheck:
+      test: curl --fail -s http://localhost:8080/login || exit 1
+      interval: 20s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "7"
+        max-size: "10m"
+        tag: "jenkins"
+    networks:
+      proxy:

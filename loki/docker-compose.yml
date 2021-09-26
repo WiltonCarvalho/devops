@@ -1,0 +1,88 @@
+version: "3.7"
+
+services:
+  grafana:
+    image: grafana/grafana:7.5.10
+    container_name: 'grafana'
+    user: '472:0'
+    restart: unless-stopped
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+      - ./configs/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
+    networks:
+      - proxy
+    ports:
+      - 3000:3000
+    depends_on:
+      - loki
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+
+  loki:
+    image: grafana/loki:2.3.0
+    container_name: loki
+    command: -config.file=/mnt/loki-local-config.yaml
+    user: '10001:10001'
+    restart: unless-stopped
+    volumes:
+      - ./data/loki:/tmp/loki
+      - ./configs/loki/loki.yml:/mnt/loki-local-config.yaml
+    ports:
+      - 3100:3100
+    networks:
+      - proxy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+
+  fluent-bit:
+    #image: grafana/fluent-bit-plugin-loki:2.3.0-amd64
+    image: fluent/fluent-bit:1.8-debug
+    container_name: fluent-bit
+    environment:
+      - LOKI_URL=http://loki:3100/loki/api/v1/push
+      - up=1
+    volumes:
+      - ./configs/fluentbit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+      - /var/lib/docker/containers:/var/log/containers
+      - /var/log/journal:/var/log/journal
+      - /etc/machine-id:/etc/machine-id:ro
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+      - "5140:5140"
+    networks:
+      - proxy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "20"
+        tag: "{{.DaemonName}}.{{.ImageName}}"
+
+  nginx:
+    image: nginx:stable
+    container_name: nginx-app
+    ports:
+      - 8080:80
+    networks:
+      - proxy
+    # logging:
+    #   driver: syslog
+    #   options:
+    #     syslog-address: tcp://127.0.0.1:5140
+    #     syslog-format: rfc3164
+    #     tag: "{{.DaemonName}}.{{.ImageName}}"
+    # logging:
+    #   driver: "json-file"
+    #   options:
+    #     max-size: "1m"
+    #     tag: "{{.DaemonName}}.{{.ImageName}}"
+
+networks:
+  proxy:
+    name: proxy
+    external: true

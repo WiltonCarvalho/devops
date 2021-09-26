@@ -1,0 +1,107 @@
+- hosts: 127.0.0.1
+  connection: local
+  gather_facts: no
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    VRRP_VIP: 192.168.122.10
+    VRRP_INTERFACE: ens3
+  handlers:
+    - name: 'restart rsyslog'
+      service:
+        name: rsyslog
+        state: restarted
+
+    - name: 'reload keepalived'
+      service:
+        name: keepalived
+        state: reloaded
+
+  tasks:
+    - name: 'install packages'
+      apt:
+        name: "{{ packages }}"
+        update_cache: yes
+      vars:
+        packages:
+        - linux-virtual-hwe-20.04
+        - keepalived
+
+    - name: '/etc/rsyslog.d/20-keepalived.conf'
+      copy:
+        dest: "/etc/rsyslog.d/20-keepalived.conf"
+        content: |
+          if $programname startswith 'Keepalived' then /var/log/keepalived.log
+          & stop
+        mode: 0644
+        owner: root
+        group: root
+      notify: restart rsyslog
+
+    - name: 'Add /etc/logrotate.d/keepalived'
+      copy:
+        dest: "/etc/logrotate.d/keepalived"
+        content: |
+          /var/log/keepalived.log
+          {
+            rotate 10
+            size 10M
+            missingok
+            notifempty
+            compress
+            delaycompress
+            sharedscripts
+            postrotate
+              /usr/lib/rsyslog/rsyslog-rotate
+            endscript
+          }
+        mode: 0644
+        owner: root
+        group: root
+
+    - name: '/etc/keepalived/keepalived.conf'
+      copy:
+        dest: "/etc/keepalived/keepalived.conf"
+        content: |
+          global_defs {
+            enable_script_security
+            script_user root
+          }
+          vrrp_script chk_haproxy {
+            script       "/usr/bin/killall -0 haproxy"
+            interval 5   # check every 5 seconds
+            weight -20
+          }
+          vrrp_instance {{ VRRP_INTERFACE }} {
+            state BACKUP
+            interface {{ VRRP_INTERFACE }}
+            virtual_router_id 70
+            priority 40
+            garp_master_delay 2
+            authentication {
+              auth_type PASS
+              auth_pass piec7Chi
+            }
+            virtual_ipaddress {
+              {{ VRRP_VIP }}/32 dev {{ VRRP_INTERFACE }}
+            }
+            track_script {
+              chk_haproxy
+            }
+          }
+        mode: 0600
+        owner: root
+        group: root
+        validate: keepalived -t -f %s
+      notify: reload keepalived
+
+    # - name: 'Set keepalived.conf priority'
+    #   lineinfile: >
+    #     dest=/etc/keepalived/keepalived.conf
+    #     regexp="{{ item.regexp }}"
+    #     line="{{ item.line }}"
+    #   with_items:
+    #   - { regexp: "priority 40", line: "priority 30" }
+    #   when: ansible_play_hosts.index(inventory_hostname) == 1
+
+    - name: 'Start the keepalived service'
+      service: name=keepalived state=started enabled=yes

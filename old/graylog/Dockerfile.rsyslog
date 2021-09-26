@@ -1,0 +1,59 @@
+FROM ubuntu:20.04 as builder
+WORKDIR /tmp
+RUN sed -i 's|# deb-src|deb-src|g' /etc/apt/sources.list && \
+    sed -i "s/archive.ubuntu.com/br.archive.ubuntu.com/g" /etc/apt/sources.list && \
+    apt update && \
+    DEBIAN_FRONTEND=noninteractive apt install -y build-essential fakeroot devscripts && \
+    DEBIAN_FRONTEND=noninteractive apt build-dep -y rsyslog && \
+    DEBIAN_FRONTEND=noninteractive apt install -y libgcrypt20-dev
+RUN apt source rsyslog && \
+    cd rsyslog-* && \
+    ./configure --enable-omstdout && \
+    make && \
+    cp plugins/omstdout/.libs/omstdout.so /tmp
+
+
+FROM ubuntu:20.04
+
+COPY --from=builder /tmp/omstdout.so /usr/lib/x86_64-linux-gnu/rsyslog/omstdout.so
+
+RUN sed -i "s/archive.ubuntu.com/br.archive.ubuntu.com/g" /etc/apt/sources.list && \
+    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata rsyslog && \
+    rm -rf /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb /var/cache/apt/*.bin /var/lib/apt/lists/* || true
+
+RUN echo '\
+$ModLoad imudp \n\
+$UDPServerRun 514 \n\
+$ModLoad imtcp \n\
+$InputTCPServerRun 514 \n\
+$EscapeControlCharactersOnReceive off \n\
+$Escape8BitCharactersOnReceive off \n\
+$ModLoad imuxsock # local system logging \n\
+#$OmitLocalLogging on \n\
+$ModLoad omstdout # messages to stdout \n\
+#$ActionFileDefaultTemplate RSYSLOG_SyslogProtocol23Format \n\
+#$ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat \n\
+$ActionFileDefaultTemplate RSYSLOG_FileFormat \n\
+$RepeatedMsgReduction on \n\
+$FileOwner syslog \n\
+$FileGroup adm \n\
+$FileCreateMode 0660 \n\
+$DirCreateMode 0775 \n\
+$Umask 0002 \n\
+$PrivDropToUser syslog \n\
+$PrivDropToGroup syslog \n\
+$WorkDirectory /var/spool/rsyslog \n\
+$template remote, "/var/log/remote/%HOSTNAME%/%programname%/%$Year%/%$Month%/%$Day%/%$Hour%.log" \n\
+:source, !isequal, "localhost" -?remote \n\
+:source, isequal, "last" stop \n\
+*.* @(o)graylog:1514;RSYSLOG_ForwardFormat \n\
+*.* :omstdout: \n\
+#*.* -/var/log/syslog \n\
+' > /etc/rsyslog.conf
+
+CMD ["rsyslogd", "-n"]
+EXPOSE 514/udp 514/tcp
+STOPSIGNAL SIGTERM
+ENV TZ="America/Sao_Paulo"
+#docker run -it --rm --name rsyslog --cap-add SYSLOG -p 514:514 -p 514:514/udp rsyslog
+#docker run -it --rm --name alpine --log-driver syslog --log-opt syslog-address=tcp://127.0.0.1:514 --log-opt tag=alpine alpine echo hello world

@@ -1,0 +1,46 @@
+server:
+  port: ${PORT:8080}
+spring:
+  resources:
+    cache:
+      cachecontrol:
+        must-revalidate: true
+        no-store: true
+  application:
+    name: spider
+management:
+  server:
+    port: ${METRICS_PORT:9100}
+  endpoints:
+    enabled-by-default: false
+    web:
+      base-path: "/"
+      exposure:
+        include: info, health, prometheus
+      path-mapping:
+        health: "healthcheck"
+        prometheus: "metrics"
+  endpoint:
+    info:
+      enabled: true
+    health:
+      enabled: true
+      #show-details: always
+    prometheus:
+      enabled: true
+  health:
+    probes:
+      enabled: true
+  # metrics:
+  #   enable:
+  #     hikaricp: true
+  #     jdbc: true
+  #     jvm: true
+  #     logback: true
+  #     process: true
+  #     spring: true
+  #     system: true
+  #     tomcat: true
+  #   tags:
+  #     service: Spider
+  #   use-global-registry: false

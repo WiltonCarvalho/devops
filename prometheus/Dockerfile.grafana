@@ -1,0 +1,4 @@
+FROM grafana/grafana
+USER root
+RUN apk add curl
+USER grafana

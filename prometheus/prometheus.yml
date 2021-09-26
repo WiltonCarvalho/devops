@@ -1,0 +1,54 @@
+global:
+  scrape_interval:     10s
+  evaluation_interval: 10s
+  external_labels:
+      monitor: 'prom1'
+rule_files:
+  - 'alert.rules'
+alerting:
+  alertmanagers:
+  - scheme: http
+    static_configs:
+    - targets:
+      - "alertmanager.local:9093"
+scrape_configs:
+  - job_name: 'prometheus'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['localhost:9090']
+  - job_name: 'grafana'
+    metrics_path: '/metrics'
+    dns_sd_configs:
+      - names:
+          - 'dev-grafana.local'
+        type: 'A'
+        port: 3000
+    # relabel_configs:
+    #   - source_labels: [__meta_dns_name]
+    #     action: replace
+    #     target_label: instance
+  - job_name: 'node-exporter'
+    metrics_path: '/metrics'
+    dns_sd_configs:
+      - names:
+          - 'node-exporter.sa-east-1.riocardmais.local'
+        type: 'SRV'
+        port: 9100
+    # relabel_configs:
+    #   - source_labels: [__meta_dns_name]
+    #     action: replace
+    #     target_label: instance
+  - job_name: 'spring-boot'
+    metrics_path: '/actuator/prometheus'
+    dns_sd_configs:
+      - names:
+          - 'spider-dev.sa-east-1.riocardmais.local'
+          - 'spider-hml.sa-east-1.riocardmais.local'
+          - 'dev-wsboleto.local'
+          - 'hml-wsboleto.local'
+        type: 'SRV'
+        port: 80
+    # relabel_configs:
+    #   - source_labels: [__meta_dns_name]
+    #     action: replace
+    #     target_label: instance

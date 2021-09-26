@@ -1,0 +1,92 @@
+plugins {
+    id 'org.springframework.boot' version '2.4.4'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'java'
+    id "org.sonarqube" version "3.1.1"
+    id 'application'
+    id 'com.google.cloud.tools.jib' version '3.1.1'
+}
+
+group = 'com.example.demo'
+version = '0.0.17'
+sourceCompatibility = '11'
+mainClassName = 'com.example.demo.Main'
+
+sonarqube {
+    properties {
+        property("sonar.projectName", "spider")
+        property("sonar.projectKey", "spider")
+        property("sonar.login", System.getenv("SONAR_LOGIN"))
+        property("sonar.host.url", System.getenv("SONAR_HOST"))
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+}
+
+
+// https://github.com/GoogleContainerTools/jib/tree/master/jib-gradle-plugin
+// docker run -it --rm --name gradle -v $PWD:/git-repo -w /git-repo openjdk:11-jdk ./gradlew -Djib.from.image=openjdk:11-jre -Djib.console=plain jibBuildTar
+// docker load --input build/jib-image.tar
+// docker inspect -f '{{ .Config.Entrypoint }}' <<image_name>>
+// docker inspect <<image_name>> | jq -r '.[0].Config.Entrypoint'
+
+// plugins { id 'com.google.cloud.tools.jib' version '3.1.1' }
+def tag_version = "${version}" - ~/-.*/
+def commit_id = "git rev-parse --verify --short=8 HEAD".execute().text.trim()
+if (commit_id == '') {
+    commit_id = System.getenv("COMMIT_HASH")
+    if (commit_id == '') {
+        error('Failed to define commit_id...')
+    }
+}
+jib {
+    //containerizingMode = "packaged"
+    from {
+        image = 'openjdk:11-jre'
+    }
+    to {
+        image = "${rootProject.name}:${tag_version}"
+        image = image.toLowerCase()
+    }
+    container {
+        entrypoint = 'INHERIT'
+        //entrypoint = '/run.sh'
+        args = [ 'sh', '-c', 'exec java $JAVA_OPTS --class-path @/app/jib-classpath-file @/app/jib-main-class-file $JAR_OPTS' ]
+        appRoot = '/app'
+        user = '999:0'
+        workingDirectory = '/app'
+        ports = ['8080']
+        environment = [
+            TZ: 'UTC',
+            DEBIAN_FRONTEND: 'noninteractive',
+            PORT: '8080',
+            APP_VERSION: tag_version,
+            COMMIT_HASH: commit_id
+        ]
+    }
+    // extraDirectories {
+    //     paths {
+    //         path {
+    //             from = 'infra/docker/apm-agent/DXI'
+    //             into = '/DXI'
+    //         }
+    //         path {
+    //             from = 'infra/docker/scripts'
+    //             into = '/'
+    //         }
+    //     }
+    //     permissions = [
+    //         '/DXI/wily/logs/BootstrapAgent.log': '666',
+    //         '/run.sh': '755'
+    //     ]
+    // }
+}

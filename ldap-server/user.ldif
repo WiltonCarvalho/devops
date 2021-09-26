@@ -1,0 +1,27 @@
+dn: ou=people,dc=example,dc=com
+objectClass: organizationalUnit
+ou: people
+
+dn: ou=groups,dc=example,dc=com
+objectClass: organizationalUnit
+ou: groups
+
+dn: cn=git-users,ou=groups,dc=example,dc=com
+objectClass: posixGroup
+cn: git-users
+gidNumber: 2000
+memberUid: wilton.carvalho
+
+dn: uid=wilton.carvalho,ou=people,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: Wilton
+sn: Carvalho
+gecos: Wilton Carvalho
+userPassword: {SSHA}6HnY9fJ5NawQhwYGA6f3Pm2RxwdGSnyz
+loginShell: /bin/bash
+uidNumber: 2000
+gidNumber: 2000
+homeDirectory: /home/wilton.carvalho
+mail: wilton.carvalho@example.com

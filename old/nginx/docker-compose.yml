@@ -1,0 +1,43 @@
+version: "3.8"
+#docker network create -o com.docker.network.bridge.name=traefik0 -o com.docker.network.bridge.host_binding_ipv4=0.0.0.0 --subnet 172.18.10.0/24 traefik
+networks:
+  traefik:
+    external: 
+      name: traefik
+#-----------------------------------
+services:
+  nginx:
+    image: nginx:stable
+    container_name: nginx
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.20'
+          memory: 256M
+        reservations:
+          memory: 128M
+    restart: unless-stopped
+    healthcheck:
+      test: curl --fail -s http://localhost/echo || exit 1
+      interval: 20s
+      timeout: 5s
+      retries: 3
+    volumes:
+      - $PWD/conf.d:/etc/nginx/conf.d
+    environment: 
+      - TZ=America/Sao_Paulo
+      - PORT=80
+      - version=3
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "7"
+        max-size: "10m"
+        tag: "nginx"
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      traefik:

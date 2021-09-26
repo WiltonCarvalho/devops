@@ -1,0 +1,30 @@
+version: "3.8"
+networks:
+  proxy:
+    external: 
+      name: proxy
+services:
+  nexus:
+    container_name: nexus
+    user: "1001"
+    image: sonatype/nexus3:3.34.1
+    ports:
+      - "8081:8081"
+    environment: 
+      - TZ=America/Sao_Paulo
+    restart: unless-stopped
+    healthcheck:
+      test: curl -fsSL http://localhost:8081/COPYRIGHT.html || exit 1
+      interval: 20s
+      timeout: 5s
+      retries: 3
+    volumes:
+      - $PWD/nexus-data:/nexus-data
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "7"
+        max-size: "10m"
+        tag: "nexus"
+    networks:
+      proxy:
