@@ -159,7 +159,7 @@
               balance leastconn
               option http-keep-alive
               option httpchk GET /v2/
-              http-check expect status 400
+              http-check expect status 401
               option forwardfor except 127.0.0.1
               server-template nexus- 1 nexus.proxy:5000 check resolvers dns-proxy init-addr libc,none
               http-request set-header X-Real-IP %[src]
