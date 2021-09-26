@@ -91,8 +91,17 @@
               mode http
               default_backend whoami
               option forwardfor
+              option dontlog-normal
+              http-request capture req.hdr(Host) len 10
+              http-request capture req.hdr(User-Agent) len 100
               acl is_stats path_beg /stats
               use_backend srv_stats if is_stats
+              #PORTAINER
+              acl use-portainer hdr_end(host) -i portainer.example.com
+              use_backend portainer if use-portainer
+              #NEXUS
+              acl use-nexus hdr_end(host) -i nexus.example.com
+              use_backend nexus if use-nexus
           backend srv_stats
               server stats 127.0.0.1:8080/stats
           listen stats 
@@ -110,7 +119,20 @@
               option httpchk GET /
               http-check expect status 200
               option forwardfor except 127.0.0.1
-              server-template whoami- 3 whoami.proxy:80 check resolvers dns-proxy init-addr libc,none
+              server-template whoami- 1 whoami.proxy:80 check resolvers dns-proxy init-addr libc,none
+              http-request set-header X-Real-IP %[src]
+              http-request set-header X-Forwarded-Host %[req.hdr(Host)]
+              http-request set-header X-Forwarded-Port %[dst_port]
+              http-request set-header X-Forwarded-Proto https if { ssl_fc }
+              http-request set-header X-Forwarded-Proto http if !{ ssl_fc }
+          backend nexus
+              mode http
+              balance leastconn
+              option http-keep-alive
+              option httpchk GET /
+              http-check expect status 200
+              option forwardfor except 127.0.0.1
+              server-template nexus- 1 nexus.proxy:80 check resolvers dns-proxy init-addr libc,none
               http-request set-header X-Real-IP %[src]
               http-request set-header X-Forwarded-Host %[req.hdr(Host)]
               http-request set-header X-Forwarded-Port %[dst_port]
