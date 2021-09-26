@@ -1,4 +1,4 @@
-FROM jenkins/jenkins:2.289.3-lts-jdk11
+FROM jenkins/jenkins:2.303.1-jdk11
 ARG DEBIAN_FRONTEND=noninteractive
 ARG TZ=America/Sao_Paulo
 USER root
