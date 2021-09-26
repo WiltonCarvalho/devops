@@ -95,7 +95,7 @@
               http-request capture req.hdr(Host) len 10
               http-request capture req.hdr(User-Agent) len 100
               acl is_stats path_beg /stats
-              use_backend srv_stats if is_stats
+              use_backend stats if is_stats
               #PORTAINER
               acl use-portainer hdr_end(host) -i portainer.example.com
               use_backend portainer if use-portainer
@@ -108,9 +108,9 @@
               #Jenkins
               acl use-jenkins hdr_end(host) -i jenkins.example.com
               use_backend jenkins if use-jenkins
-          backend srv_stats
+          backend stats
               server stats 127.0.0.1:2080/stats
-          listen stats 
+          listen Stats
               bind 127.0.0.1:2080
               mode http
               stats enable
