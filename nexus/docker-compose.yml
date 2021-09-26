@@ -14,9 +14,9 @@ services:
       resources:
         limits:
           cpus: '0.80'
-          memory: 512M
+          memory: 2048M
         reservations:
-          memory: 512M
+          memory: 2048M
     ports:
       - "8081:8081"
     environment: 
