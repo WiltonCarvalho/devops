@@ -89,7 +89,7 @@
               #http-request redirect scheme https unless { ssl_fc }
               #http-request redirect scheme https code 301 unless { ssl_fc }
               mode http
-              default_backend nginx
+              default_backend whoami
               option forwardfor
               acl is_stats path_beg /stats
               use_backend srv_stats if is_stats
@@ -103,14 +103,14 @@
               stats uri /stats
               stats show-legends
               no log
-          backend nginx
+          backend whoami
               mode http
               balance leastconn
               option http-keep-alive
               option httpchk GET /
               http-check expect status 200
               option forwardfor except 127.0.0.1
-              server-template nginx- 3 nginx.proxy:80 check resolvers dns-proxy init-addr libc,none
+              server-template whoami- 3 whoami.proxy:80 check resolvers dns-proxy init-addr libc,none
               http-request set-header X-Real-IP %[src]
               http-request set-header X-Forwarded-Host %[req.hdr(Host)]
               http-request set-header X-Forwarded-Port %[dst_port]

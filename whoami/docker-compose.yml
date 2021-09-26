@@ -1,8 +1,12 @@
 version: "3.8"
 services:
   nginx:
-    image: nginx:stable
-    container_name: nginx
+    container_name: whoami
+    image: whoami
+    build:
+      dockerfile: Dockerfile
+      context: .
+      network: host
     environment: 
       - TZ=America/Sao_Paulo
       - update=1
