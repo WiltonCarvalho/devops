@@ -5,11 +5,20 @@ networks:
       name: proxy
 services:
   jenkins:
+    image: jenkins:lts
     build:
       dockerfile: Dockerfile
       context: .
-    image: jenkins:lts
-    #privileged: true
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.80'
+          memory: 2048M
+        reservations:
+          memory: 2048M
+    restart: unless-stopped
     user: "1001:131"
     ports:
       - 8080:8080
@@ -26,7 +35,6 @@ services:
       interval: 20s
       timeout: 5s
       retries: 3
-    restart: unless-stopped
     logging:
       driver: "json-file"
       options:
