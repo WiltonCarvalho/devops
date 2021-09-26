@@ -6,7 +6,7 @@ networks:
 services:
   nexus:
     container_name: nexus
-    user: "1001"
+    user: "200"
     image: sonatype/nexus3:3.34.1
     deploy:
       mode: replicated
