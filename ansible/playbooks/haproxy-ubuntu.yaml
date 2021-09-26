@@ -102,6 +102,9 @@
               #NEXUS
               acl use-nexus hdr_end(host) -i nexus.example.com
               use_backend nexus if use-nexus
+              #REGISTRY
+              acl use-registry hdr_end(host) -i registry.example.com
+              use_backend registry if use-registry
           backend srv_stats
               server stats 127.0.0.1:8080/stats
           listen stats 
@@ -146,6 +149,19 @@
               http-check expect status 200
               option forwardfor except 127.0.0.1
               server-template nexus- 1 nexus.proxy:8081 check resolvers dns-proxy init-addr libc,none
+              http-request set-header X-Real-IP %[src]
+              http-request set-header X-Forwarded-Host %[req.hdr(Host)]
+              http-request set-header X-Forwarded-Port %[dst_port]
+              http-request set-header X-Forwarded-Proto https if { ssl_fc }
+              http-request set-header X-Forwarded-Proto http if !{ ssl_fc }
+          backend registry
+              mode http
+              balance leastconn
+              option http-keep-alive
+              option httpchk GET /
+              http-check expect status 200
+              option forwardfor except 127.0.0.1
+              server-template registry- 1 nexus.proxy:5000 check resolvers dns-proxy init-addr libc,none
               http-request set-header X-Real-IP %[src]
               http-request set-header X-Forwarded-Host %[req.hdr(Host)]
               http-request set-header X-Forwarded-Port %[dst_port]
