@@ -16,6 +16,7 @@ services:
           memory: 128M
         reservations:
           memory: 128M
+    restart: "unless-stopped"
     environment: 
       - TZ=America/Sao_Paulo
       - update=1

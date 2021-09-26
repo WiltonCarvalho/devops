@@ -1,0 +1,8 @@
+openssl req -new -key /etc/ssl/private/ssl-cert-snakeoil.key -out example.csr -subj '/O=Example/CN=*.example.com' -addext "subjectAltName=IP:127.0.0.1,DNS:example.com,DNS:*.example.com"
+echo "subjectAltName=IP:127.0.0.1,DNS:example.com,DNS:*.example.com" > /tmp/san.txt
+openssl x509 -req -days 36500 -in example.csr -signkey /etc/ssl/private/ssl-cert-snakeoil.key -out /etc/ssl/certs/ssl-cert-snakeoil.pem -extfile /tmp/san.txt
+cat /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/ssl/private/ssl-cert-snakeoil.key > /etc/haproxy/certs/ssl-cert-snakeoil.pem
+mkdir /usr/share/ca-certificates/snakeoil
+cp /etc/ssl/certs/ssl-cert-snakeoil.pem /usr/share/ca-certificates/snakeoil/
+echo "snakeoil/ssl-cert-snakeoil.pem" >> /etc/ca-certificates.conf
+update-ca-certificates -f
