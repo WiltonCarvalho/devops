@@ -161,7 +161,7 @@
               option httpchk GET /v2/
               http-check expect status 400
               option forwardfor except 127.0.0.1
-              server-template registry- 1 nexus.proxy:5000 check resolvers dns-proxy init-addr libc,none
+              server-template nexus- 1 nexus.proxy:5000 check resolvers dns-proxy init-addr libc,none
               http-request set-header X-Real-IP %[src]
               http-request set-header X-Forwarded-Host %[req.hdr(Host)]
               http-request set-header X-Forwarded-Port %[dst_port]
