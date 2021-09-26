@@ -7,4 +7,4 @@ ldap-server/*/*
 loki/data/*/*
 !loki/data/*/*/empty
 nexus/nexus-data/*
-nexus/nexus-data/empty
+!nexus/nexus-data/empty
