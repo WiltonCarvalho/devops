@@ -109,9 +109,9 @@
               acl use-jenkins hdr_end(host) -i jenkins.example.com
               use_backend jenkins if use-jenkins
           backend srv_stats
-              server stats 127.0.0.1:8080/stats
+              server stats 127.0.0.1:2080/stats
           listen stats 
-              bind 127.0.0.1:8080
+              bind 127.0.0.1:2080
               mode http
               stats enable
               stats hide-version
