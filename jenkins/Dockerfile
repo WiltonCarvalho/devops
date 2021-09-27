@@ -20,7 +20,7 @@ RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - && \
     rm -rf /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb /var/cache/apt/*.bin /var/lib/apt/lists/* || true
 USER jenkins
 RUN echo && docker-compose -version && echo && aws --version && echo && docker version || true
-RUN jenkins-plugin-cli --plugins "blueocean:1.25.0 docker-workflow:1.26"
+RUN jenkins-plugin-cli --plugins "blueocean:1.25.0 docker-workflow:1.26 ssh-agent ssh-credentials credentials matrix-auth ansicolor slack build-user-vars-plugin"
 #RUN jenkins-plugin-cli --plugins ssh-agent ssh-credentials ansicolor workflow-aggregator docker-workflow git \
 #    build-user-vars-plugin matrix-auth:2.6.6 credentials authorize-project email-ext slack
 #blueocean:1.24.4

@@ -1,0 +1,403 @@
+pipeline {
+    agent none
+    environment {
+        repo = 'ssh://gitlab:22/devops/spider.git'
+        IMAGE = 'spider'
+        registry_url = 'https://registry.example.com'
+        userInput = null
+    }
+    stages {
+        stage('Notify') {
+            agent any
+            steps {
+                script {
+                    wrap([$class: 'BuildUser']) {
+                        slackSend (
+                            channel: '#jenkins-cicd',
+                            color: '#FFFF00',
+                            message: "\ud83d\ude4b ${env.JOB_NAME} (${env.BUILD_NUMBER}) - Build iniciado pelo usuário ${env.BUILD_USER_ID}\n${env.BUILD_URL}"
+                        )
+                    }
+                }
+            }
+        }
+        // stage('Cloning Git') {
+        //     steps {
+        //         git repo
+        //     }
+        // }
+        stage('Build') {
+            agent {
+                docker {
+                    image 'registry.example.com/openjdk:11-jdk'
+                    registryUrl 'https://registry.example.com'
+                    registryCredentialsId 'admin-registry'
+                    args '-e TZ=America/Sao_Paulo'
+                }
+            }
+            steps {
+                sh './gradlew jib -Djib.from.image=registry.example.com/openjdk:11-jre -Djib.to.image=registry.example.com/${env.IMAGE}:${env.BUILD_ID} -Djib.console=plain
+            }
+            post {
+                failure {
+                    script { env.FAILURE_STAGE = 'Build' }
+                }
+                success {
+                    script {
+                        env.SUCCESS_STAGE = 'Build'
+                        slackSend channel: '#jenkins-cicd',
+                        color: '#00FF00',
+                        message: "\ud83d\ude03 ${env.JOB_NAME} (${env.BUILD_NUMBER}) has succeded in ${env.SUCCESS_STAGE} stage!"
+                    }
+                }
+                aborted {
+                    script {
+                        wrap([$class: 'BuildUser']) {
+                            slackSend (
+                                channel: '#jenkins-cicd',
+                                color: '#FF0000',
+                                message: "\ud83d\ude21 ${env.JOB_NAME} (${env.BUILD_NUMBER}) - Pipeline aborted by ${env.BUILD_USER_ID}\n${env.BUILD_URL}"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        // stage('DockerBuild') {
+        //     steps {
+        //         script {
+        //             docker.withRegistry('https://registry.example.com', 'admin-registry') {
+        //                 app = docker.build("${env.IMAGE}:${env.BUILD_ID}")
+        //             }
+        //         }
+        //     }
+        //     post {
+        //         failure {
+        //             script { env.FAILURE_STAGE = 'DockerBuild' }
+        //         }
+        //         success {
+        //             script {
+        //                 env.SUCCESS_STAGE = 'DockerBuild'
+        //                 slackSend channel: '#jenkins-cicd',
+        //                 color: '#00FF00',
+        //                 message: "\ud83d\ude03 ${env.JOB_NAME} (${env.BUILD_NUMBER}) has succeded in ${env.SUCCESS_STAGE} stage!"
+        //             }
+        //         }
+        //         aborted {
+        //             script {
+        //                 wrap([$class: 'BuildUser']) {
+        //                     slackSend (
+        //                         channel: '#jenkins-cicd',
+        //                         color: '#FF0000',
+        //                         message: "\ud83d\ude21 ${env.JOB_NAME} (${env.BUILD_NUMBER}) - Pipeline aborted by ${env.BUILD_USER_ID}\n${env.BUILD_URL}"
+        //                     )
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+        stage('TrivySecurityScan') {
+            agent {
+                docker {
+                    image 'aquasec/trivy'
+                    args '--entrypoint="" -v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
+            steps {
+                sh "trivy --cache-dir .cache/ --no-progress --exit-code 1 --ignore-unfixed --severity HIGH,CRITICAL ${env.IMAGE}:${env.BUILD_ID}"
+            }
+            post {
+                failure {
+                    script { env.FAILURE_STAGE = 'TrivySecurityScan' }
+                }
+                success {
+                    script {
+                        env.SUCCESS_STAGE = 'TrivySecurityScan'
+                        slackSend channel: '#jenkins-cicd',
+                        color: '#00FF00',
+                        message: "\ud83d\ude03 ${env.JOB_NAME} (${env.BUILD_NUMBER}) has succeded in ${env.SUCCESS_STAGE} stage!"
+                    }
+                }
+                aborted {
+                    script {
+                        wrap([$class: 'BuildUser']) {
+                            slackSend (
+                                channel: '#jenkins-cicd',
+                                color: '#FF0000',
+                                message: "\ud83d\ude21 ${env.JOB_NAME} (${env.BUILD_NUMBER}) - Pipeline aborted by ${env.BUILD_USER_ID}\n${env.BUILD_URL}"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        stage('DockerPush') {
+            steps {
+                script {
+                    docker.withRegistry('https://registry.example.com', 'admin-registry') {
+                        app.push("${env.BUILD_ID}")
+                    }
+                }
+                //sh "docker rmi $IMAGE:$BUILD_NUMBER"
+            }
+            post {
+                failure {
+                    script { env.FAILURE_STAGE = 'DockerPush' }
+                }
+                success {
+                    script {
+                        env.SUCCESS_STAGE = 'DockerPush'
+                        slackSend channel: '#jenkins-cicd',
+                        color: '#00FF00',
+                        message: "\ud83d\ude03 ${env.JOB_NAME} (${env.BUILD_NUMBER}) has succeded in ${env.SUCCESS_STAGE} stage!"
+                    }
+                }
+                aborted {
+                    script {
+                        wrap([$class: 'BuildUser']) {
+                            slackSend (
+                                channel: '#jenkins-cicd',
+                                color: '#FF0000',
+                                message: "\ud83d\ude21 ${env.JOB_NAME} (${env.BUILD_NUMBER}) - Pipeline aborted by ${env.BUILD_USER_ID}\n${env.BUILD_URL}"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        stage('DeployDEV') {
+            agent any
+            environment { 
+                DOCKER_HOST = 'ssh://ubuntu@192.168.122.192'
+            }
+            steps {
+                script {
+                    sshagent(['ssh-docker']) {
+                        sh """
+                        cat <<EOF> ${env.HOME}/.ssh/config
+                        StrictHostKeyChecking=no
+                        UserKnownHostsFile=/dev/null
+                        EOF
+                        """.stripIndent()
+                        sh 'printenv'
+                        docker.withRegistry('https://registry.example.com', 'admin-registry') {
+                            sh 'docker-compose --project-name DEV -f docker-compose.yml up -d'
+                            sh 'sleep 10'
+                            sh 'docker-compose ps'
+                            sh 'docker-compose logs spider'
+                        }
+                    }
+                }
+            }
+            post {
+                failure {
+                    script { env.FAILURE_STAGE = 'DeployDEV' }
+                }
+                success {
+                    script {
+                        env.SUCCESS_STAGE = 'DeployDEV'
+                        slackSend channel: '#jenkins-cicd',
+                        color: '#00FF00',
+                        message: "\ud83d\ude03 ${env.JOB_NAME} (${env.BUILD_NUMBER}) has succeded in ${env.SUCCESS_STAGE} stage!"
+                    }
+                }
+                aborted {
+                    script {
+                        wrap([$class: 'BuildUser']) {
+                            slackSend (
+                                channel: '#jenkins-cicd',
+                                color: '#FF0000',
+                                message: "\ud83d\ude21 ${env.JOB_NAME} (${env.BUILD_NUMBER}) - Pipeline aborted by ${env.BUILD_USER_ID}\n${env.BUILD_URL}"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        stage('ApprovalHML') {
+            agent none
+            steps {
+                script {
+                    slackSend channel: '#jenkins-cicd',
+                    color: '#FFFF00',
+                    message: "\ud83d\ude4b ${env.JOB_NAME} (${env.BUILD_NUMBER}) - Aprovação Pendente em HML\n${env.BUILD_URL}input/"
+                    timeout(time: 10, unit: "MINUTES") {
+                        userInput = input(
+                        submitterParameter: "approver",
+                        id: "approve",
+                        message: "Provide your approval to proceed",
+                        submitter: 'user2',
+                        parameters: [
+                            string(defaultValue: "approved", description: 'Please provide the message why your are approving', name: 'remarks')
+                        ])
+                        echo "Remarks: ${userInput['remarks']}"
+                        echo "It was ${userInput.approver} who approved this job"
+                        slackSend channel: '#jenkins-cicd',
+                        color: '#FFFF00',
+                        message: "\ud83d\ude4b ${env.JOB_NAME} (${env.BUILD_NUMBER}) - Deploy em HML aprovado pelo usuário ${userInput.approver}\n${env.BUILD_URL}"
+                    }
+                }
+            }
+            post {
+                aborted {
+                    script {
+                        slackSend (
+                            channel: '#jenkins-cicd',
+                            color: '#FF0000',
+                            message: "\ud83d\ude21 ${env.JOB_NAME} (${env.BUILD_NUMBER}) - Deploy em HML negado\n${env.BUILD_URL}"
+                        )
+                    }
+                }
+            }
+        }
+        stage('DeployHML') {
+            agent any
+            environment { 
+                DOCKER_HOST = 'ssh://ubuntu@192.168.122.192'
+            }
+            steps {
+                script {
+                    sshagent(['ssh-docker']) {
+                        sh """
+                        cat <<EOF> ${env.HOME}/.ssh/config
+                        StrictHostKeyChecking=no
+                        UserKnownHostsFile=/dev/null
+                        EOF
+                        """.stripIndent()
+                        sh 'printenv'
+                        docker.withRegistry('https://registry.example.com', 'admin-registry') {
+                            sh 'docker-compose --project-name HML -f docker-compose.yml up -d'
+                            sh 'sleep 10'
+                            sh 'docker-compose ps'
+                            sh 'docker-compose logs spider'
+                        }
+                    }
+                }
+            }
+            post {
+                failure {
+                    script { env.FAILURE_STAGE = 'DeployHML' }
+                }
+                success {
+                    script {
+                        env.SUCCESS_STAGE = 'DeployHML'
+                        slackSend channel: '#jenkins-cicd',
+                        color: '#00FF00',
+                        message: "\ud83d\ude03 ${env.JOB_NAME} (${env.BUILD_NUMBER}) has succeded in ${env.SUCCESS_STAGE} stage!"
+                    }
+                }
+                aborted {
+                    script {
+                        wrap([$class: 'BuildUser']) {
+                            slackSend (
+                                channel: '#jenkins-cicd',
+                                color: '#FF0000',
+                                message: "\ud83d\ude21 ${env.JOB_NAME} (${env.BUILD_NUMBER}) - Pipeline aborted by ${env.BUILD_USER_ID}\n${env.BUILD_URL}"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        stage('ApprovalPROD') {
+            agent none
+            steps {
+                script {
+                    slackSend channel: '#jenkins-cicd',
+                    color: '#FFFF00',
+                    message: "\ud83d\ude4b ${env.JOB_NAME} (${env.BUILD_NUMBER}) - Aprovação Pendente em PROD\n${env.BUILD_URL}input/"
+                    timeout(time: 10, unit: "MINUTES") {
+                        userInput = input(
+                        submitterParameter: "approver",
+                        id: "approve",
+                        message: "Provide your approval to proceed",
+                        submitter: 'user2',
+                        parameters: [
+                            string(defaultValue: "approved", description: 'Please provide the message why your are approving', name: 'remarks')
+                        ])
+                        echo "Remarks: ${userInput['remarks']}"
+                        echo "It was ${userInput.approver} who approved this job"
+                        slackSend channel: '#jenkins-cicd',
+                        color: '#FFFF00',
+                        message: "\ud83d\ude4b ${env.JOB_NAME} (${env.BUILD_NUMBER}) - Deploy em PROD aprovado pelo usuário ${userInput.approver}\n${env.BUILD_URL}"
+                    }
+                }
+            }
+            post {
+                aborted {
+                    script {
+                        slackSend (
+                            channel: '#jenkins-cicd',
+                            color: '#FF0000',
+                            message: "\ud83d\ude21 ${env.JOB_NAME} (${env.BUILD_NUMBER}) - Deploy em PROD negado\n${env.BUILD_URL}"
+                        )
+                    }
+                }
+            }
+        }
+        stage('DeployPROD') {
+            agent any
+            environment { 
+                DOCKER_HOST = 'ssh://ubuntu@192.168.122.192'
+            }
+            steps {
+                script {
+                    sshagent(['ssh-docker']) {
+                        sh """
+                        cat <<EOF> ${env.HOME}/.ssh/config
+                        StrictHostKeyChecking=no
+                        UserKnownHostsFile=/dev/null
+                        EOF
+                        """.stripIndent()
+                        sh 'printenv'
+                        docker.withRegistry('https://registry.example.com', 'admin-registry') {
+                            sh 'docker-compose --project-name PROD -f docker-compose.yml up -d'
+                            sh 'sleep 10'
+                            sh 'docker-compose ps'
+                            sh 'docker-compose logs spider'
+                        }
+                    }
+                }
+            }
+            post {
+                failure {
+                    script { env.FAILURE_STAGE = 'DeployPROD' }
+                }
+                success {
+                    script {
+                        env.SUCCESS_STAGE = 'DeployPROD'
+                        slackSend channel: '#jenkins-cicd',
+                        color: '#00FF00',
+                        message: "\ud83d\ude03 ${env.JOB_NAME} (${env.BUILD_NUMBER}) has succeded in ${env.SUCCESS_STAGE} stage!"
+                    }
+                }
+                aborted {
+                    script {
+                        wrap([$class: 'BuildUser']) {
+                            slackSend (
+                                channel: '#jenkins-cicd',
+                                color: '#FF0000',
+                                message: "\ud83d\ude21 ${env.JOB_NAME} (${env.BUILD_NUMBER}) - Pipeline aborted by ${env.BUILD_USER_ID}\n${env.BUILD_URL}"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        failure {
+            slackSend channel: '#jenkins-cicd',
+            color: '#FF0000',
+            message: "\ud83d\ude21 ${env.JOB_NAME} (${env.BUILD_NUMBER}) has failed in ${env.FAILURE_STAGE} stage!"
+            // mail subject: "\u2639 ${env.JOB_NAME} (${env.BUILD_NUMBER}) has failed",
+            //         body: """
+            //             |Build ${env.BUILD_URL} is failing in ${env.FAILURE_STAGE} stage!
+            //             |Somebody should do something about that
+            //             """,
+            //         to: "devel@example.com",
+            //         replyTo: "devel@example.com",
+            //         from: 'jenkins@example.com'
+        }
+    }
+}

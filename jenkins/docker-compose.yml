@@ -5,7 +5,7 @@ networks:
       name: proxy
 services:
   jenkins:
-    image: jenkins:lts
+    image: jenkins
     build:
       dockerfile: Dockerfile
       context: .
