@@ -32,11 +32,15 @@ pipeline {
                     image 'registry.example.com/openjdk:11-jdk'
                     registryUrl 'https://registry.example.com'
                     registryCredentialsId 'admin-registry'
-                    args '-e TZ=America/Sao_Paulo'
+                    args '-e TZ=America/Sao_Paulo -v $HOME/.docker:/root/.docker:ro'
                 }
             }
             steps {
-                sh './gradlew jib -Djib.from.image=registry.example.com/openjdk:11-jre -Djib.to.image=registry.example.com/${env.IMAGE}:${env.BUILD_ID} -Djib.console=plain
+                sh './gradlew jib \
+                    -Djib.from.image=registry.example.com/openjdk:11-jre \
+                    -Djib.to.image=registry.example.com/${env.IMAGE}:${env.BUILD_ID} \
+                    -Djib.allowInsecureRegistries=true \
+                    -Djib.console=plain
             }
             post {
                 failure {

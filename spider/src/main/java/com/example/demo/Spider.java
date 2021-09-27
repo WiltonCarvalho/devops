@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 
 @RestController
-public class HelloController {
+public class Spider {
     @RequestMapping("/")
     public String index(HttpServletRequest request) {
     String addr = request.getHeader("X-Forwarded-For");
