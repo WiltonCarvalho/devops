@@ -1,11 +1,11 @@
 version: "3.8"
 networks:
-  traefik:
+  proxy:
     external: 
-      name: traefik
+      name: proxy
 services:
   gitlab:
-    image: gitlab/gitlab-ce
+    image: gitlab/gitlab-ce:11.4.7-ce.0
     container_name: gitlab
     ports:
       - "4222:22"
@@ -32,9 +32,9 @@ services:
       options:
         max-file: "5"
         max-size: "5m"
-        tag: "gitlab"
+        tag: "{{.DaemonName}}.{{.ImageName}}"
     networks:
-      traefik:
+      proxy:
   # gitlab-runner:
   #   image: gitlab/gitlab-runner:alpine
   #   deploy:

@@ -1,11 +1,12 @@
-FROM jenkins/jenkins:2.303.1-jdk11
+#FROM jenkins/jenkins:2.303.1-jdk11
+FROM jenkins/jenkins:2.238-slim
 ARG DEBIAN_FRONTEND=noninteractive
 ARG TZ=America/Sao_Paulo
 USER root
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - && \
     echo "deb [arch=amd64] https://download.docker.com/linux/debian $(grep VERSION_CODENAME /etc/os-release | cut -d'=' -f 2) stable" > /etc/apt/sources.list.d/docker.list && \
     apt-get -qq update && \
-    apt-get -qq -y install --no-install-recommends tzdata ca-certificates gnupg2 unzip curl wget less lynx jq docker-ce-cli python3 && \
+    apt-get -qq -y install --no-install-recommends tzdata ca-certificates gnupg2 unzip curl wget less lynx jq docker-ce-cli python3 git && \
     # apt-get -qq -y install --no-install-recommends python3-pip python3-setuptools python3-wheel \
     # python3-websocket python3-docopt python3-jsonschema python3-texttable python3-cached-property python3-dotenv python3-yaml \
     # python3-docker python3-dockerpty python3-requests python3-distro python3-six python3-attr python3-paramiko python3-certifi \
@@ -20,9 +21,8 @@ RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - && \
     rm -rf /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb /var/cache/apt/*.bin /var/lib/apt/lists/* || true
 USER jenkins
 RUN echo && docker-compose -version && echo && aws --version && echo && docker version || true
-RUN jenkins-plugin-cli --plugins "blueocean:1.25.0 docker-workflow:1.26 ssh-agent ssh-credentials credentials matrix-auth ansicolor slack build-user-vars-plugin"
-#RUN jenkins-plugin-cli --plugins ssh-agent ssh-credentials ansicolor workflow-aggregator docker-workflow git \
-#    build-user-vars-plugin matrix-auth:2.6.6 credentials authorize-project email-ext slack
-#blueocean:1.24.4
+#RUN jenkins-plugin-cli --plugins "blueocean:1.25.0 docker-workflow:1.26 ssh-agent ssh-credentials credentials matrix-auth ansicolor slack build-user-vars-plugin"
+RUN jenkins-plugin-cli --plugins ssh-agent ssh-credentials ansicolor workflow-aggregator docker-workflow git \
+    build-user-vars-plugin matrix-auth credentials authorize-project email-ext slack
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Sao_Paulo

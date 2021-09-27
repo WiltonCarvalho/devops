@@ -3,6 +3,7 @@
   gather_facts: no
   vars:
     ansible_python_interpreter: /usr/bin/python3
+    docker_compose_version: '1.29.2'
   handlers:
     - name: 'restart rsyslog'
       service:
@@ -96,11 +97,34 @@
         owner: root
         group: root
 
+    - name: 'docker-compose checksum'
+      shell: >
+        curl -fsSL https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-Linux-x86_64.sha256 | awk '{print $1}'
+      args:
+        warn: false
+      register: docker_compose_checksum
+
+    # - name: 'docker-compose checksum stdout'
+    #   debug:
+    #     msg: "{{ docker_compose_checksum.stdout }}"
+
     - name: 'Docker Compose'
       get_url:
-        url: https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64
-        #checksum: sha256:https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64.sha256
+        url: https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-Linux-x86_64
+        #checksum: sha256:https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-Linux-x86_64.sha256
+        checksum: sha256:{{ docker_compose_checksum.stdout }}
         dest: /usr/local/bin/docker-compose
         mode: 0755
         owner: root
         group: root
+
+    - name: 'docker-compose version'
+      shell: >
+        docker version && docker-compose version
+      args:
+        warn: false
+      register: docker_compose_version
+
+    - name: 'docker-compose version stdout'
+      debug:
+        msg: "{{ docker_compose_version.stdout_lines }}"

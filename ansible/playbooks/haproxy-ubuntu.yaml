@@ -39,6 +39,15 @@
         cat /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/ssl/private/ssl-cert-snakeoil.key > /etc/haproxy/certs/ssl-cert-snakeoil.pem
       when: snakeoil_check.rc > 0
 
+    - name: 'Sysctl Conf'
+      sysctl:
+        name: "{{item}}"
+        value: '1'
+        sysctl_file: /etc/sysctl.d/999-custom.conf
+        reload: yes
+      with_items:
+        - net.ipv4.ip_nonlocal_bind
+
     - name: '/etc/haproxy/haproxy.cfg'
       copy:
         dest: /etc/haproxy/haproxy.cfg
