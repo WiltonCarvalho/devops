@@ -7,7 +7,7 @@ plugins {
     id 'com.google.cloud.tools.jib' version '3.1.1'
 }
 
-group = 'com.example.demo'
+group = 'com.example'
 version = '0.0.17'
 sourceCompatibility = '11'
 
