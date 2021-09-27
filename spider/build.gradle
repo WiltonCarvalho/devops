@@ -10,7 +10,10 @@ plugins {
 group = 'com.example.demo'
 version = '0.0.17'
 sourceCompatibility = '11'
-mainClassName = 'com.example.demo.Main'
+
+application {
+    mainClassName = 'com.example.demo.Main'
+}
 
 sonarqube {
     properties {
