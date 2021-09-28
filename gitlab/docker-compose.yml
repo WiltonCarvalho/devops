@@ -5,8 +5,20 @@ networks:
       name: proxy
 services:
   gitlab:
-    image: gitlab/gitlab-ce:11.4.7-ce.0
+    image: gitlab
     container_name: gitlab
+    build:
+      dockerfile: Dockerfile
+      context: .
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.80'
+          memory: 2048M
+        reservations:
+          memory: 2048M
     ports:
       - "4222:22"
       # - "80:80"
