@@ -199,7 +199,7 @@
               mode http
               balance leastconn
               option http-keep-alive
-              option httpchk GET /login
+              option httpchk GET /help
               http-check expect status 200
               option forwardfor except 127.0.0.1
               server-template gitlab- 1 gitlab.proxy:80 check resolvers dns-proxy init-addr libc,none
