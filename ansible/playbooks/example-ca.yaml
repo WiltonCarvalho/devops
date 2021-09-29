@@ -43,7 +43,7 @@
         -out example.pem -sha256 -extfile /tmp/san.txt
         test -d /usr/share/ca-certificates/example_ca || mkdir /usr/share/ca-certificates/example_ca
         cp -f /etc/ssl/example_ca/example_ca.pem /usr/share/ca-certificates/example_ca/example_ca.pem
-        cat /etc/ssl/example_ca/example_ca.pem /etc/ssl/example_ca/example.pem > /etc/ssl/example_ca/example_chain.pem
+        cat /etc/ssl/example_ca/example.pem /etc/ssl/example_ca/example_ca.pem > /etc/ssl/example_ca/example_chain.pem
         openssl x509 -text -in example.pem
       when: ca_check.rc > 0
       register: create_ca

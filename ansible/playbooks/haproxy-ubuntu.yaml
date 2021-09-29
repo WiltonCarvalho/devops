@@ -36,7 +36,8 @@
 
     - name: 'ssl-cert-snakeoil'
       shell: |
-        cat /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/ssl/private/ssl-cert-snakeoil.key > /etc/haproxy/certs/ssl-cert-snakeoil.pem
+        cat /etc/ssl/private/ssl-cert-snakeoil.key /etc/ssl/certs/ssl-cert-snakeoil.pem > /etc/haproxy/certs/ssl-cert-snakeoil.pem
+        #cat /etc/ssl/example_ca/example.key /etc/ssl/example_ca/example.pem /etc/ssl/example_ca/example_ca.pem > /etc/haproxy/certs/example.pem
       when: snakeoil_check.rc > 0
 
     - name: 'Sysctl Conf'
