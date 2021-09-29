@@ -40,7 +40,7 @@ pipeline {
                     -Djib.from.image=registry.example.com/openjdk:11-jre \
                     -Djib.to.image=registry.example.com/${env.IMAGE}:${env.BUILD_ID} \
                     -Djib.allowInsecureRegistries=true \
-                    -Djib.console=plain
+                    -Djib.console=plain'
             }
             post {
                 failure {

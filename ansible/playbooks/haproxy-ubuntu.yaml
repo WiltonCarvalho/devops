@@ -94,9 +94,6 @@
           frontend web
               bind 0.0.0.0:80 name http
               bind 0.0.0.0:443 name https ssl crt /etc/haproxy/certs/ ssl-min-ver TLSv1.2
-              #http-response set-header Strict-Transport-Security "max-age=16000000; includeSubDomains; preload;"
-              #http-request redirect scheme https unless { ssl_fc }
-              #http-request redirect scheme https code 301 unless { ssl_fc }
               mode http
               default_backend whoami
               option forwardfor
@@ -120,6 +117,10 @@
               #GITLAB
               acl use-gitlab hdr_end(host) -i gitlab.example.com
               use_backend gitlab if use-gitlab
+              #http-response set-header Strict-Transport-Security "max-age=16000000; includeSubDomains; preload;"
+              #http-request redirect scheme https unless { ssl_fc }
+              #http-request redirect scheme https code 301 unless { ssl_fc }
+              http-request redirect scheme https code 301 if use-gitlab !{ ssl_fc }
           backend stats
               server stats 127.0.0.1:2080/stats
           listen Stats
