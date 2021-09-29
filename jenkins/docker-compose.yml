@@ -5,10 +5,10 @@ networks:
       name: proxy
 services:
   jenkins:
-    image: jenkins
-    build:
-      dockerfile: Dockerfile
-      context: .
+    image: registry.example.com/jenkins
+    # build:
+    #   dockerfile: Dockerfile
+    #   context: .
     deploy:
       mode: replicated
       replicas: 1
