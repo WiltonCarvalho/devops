@@ -120,7 +120,7 @@
               #http-response set-header Strict-Transport-Security "max-age=16000000; includeSubDomains; preload;"
               #http-request redirect scheme https unless { ssl_fc }
               #http-request redirect scheme https code 301 unless { ssl_fc }
-              http-request redirect scheme https code 301 if use-gitlab !{ ssl_fc }
+              http-request redirect scheme https code 302 if use-gitlab !{ ssl_fc }
           backend stats
               server stats 127.0.0.1:2080/stats
           listen Stats
