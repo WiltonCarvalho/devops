@@ -1,0 +1,72 @@
+- hosts: 127.0.0.1
+  connection: local
+  gather_facts: no
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  handlers:
+    - name: 'update-ca-certificates'
+      shell: >
+        update-ca-certificates -f
+  tasks:
+    - name: 'install packages'
+      apt:
+        name: "{{ packages }}"
+        update_cache: no
+      vars:
+        packages:
+        - openssl
+        - ca-certificates
+        - ssl-cert
+
+    - name: '/etc/ssl/example_ca'
+      file: 
+        path: "/etc/ssl/example_ca"
+        state: directory
+
+    - name: 'ca check'
+      shell: test -f /etc/ssl/example_ca/example_ca.pem
+      register: ca_check
+      failed_when: ca_check.rc > 1
+      changed_when: ca_check.rc > 0
+
+    - name: 'create ca'
+      shell: |
+        cd /etc/ssl/example_ca/
+        openssl genrsa -out example_ca.key 2048
+        openssl req -x509 -new -nodes -key example_ca.key -days 36500 \
+        -out example_ca.pem -sha256 -subj '/O=Example/CN=example ca'
+        openssl genrsa -out example.key 2048
+        openssl req -new -key example.key -out example.csr -subj '/O=Example/CN=*.example.com'
+        echo "extendedKeyUsage = clientAuth, serverAuth, 1.3.6.1.5.5.8.2.2" > /tmp/san.txt
+        echo "subjectAltName=IP:127.0.0.1,IP:192.168.122.10,DNS:example.com,DNS:*.example.com" >> /tmp/san.txt
+        openssl x509 -req -in example.csr -CA example_ca.pem -CAkey example_ca.key -CAcreateserial -days 36500 \
+        -out example.pem -sha256 -extfile /tmp/san.txt
+        test -d /usr/share/ca-certificates/example_ca || mkdir /usr/share/ca-certificates/example_ca
+        cp -f /etc/ssl/example_ca/example_ca.pem /usr/share/ca-certificates/example_ca/example_ca.pem
+        cat /etc/ssl/example_ca/example_ca.pem /etc/ssl/example_ca/example.pem > /etc/ssl/example_ca/example_chain.pem
+        openssl x509 -text -in example.pem
+      when: ca_check.rc > 0
+      register: create_ca
+
+    - name: 'create_ca stdout'
+      debug:
+        msg: "{{ create_ca.stdout }}"
+      when: ca_check.rc > 0
+
+    - name: 'update-ca-certificates'
+      lineinfile:
+        path: /etc/ca-certificates.conf
+        line: '{{ item }}'
+      with_items:
+        - example_ca/example_ca.pem
+      notify: update-ca-certificates
+      when: ca_check.rc > 0
+
+    - name: 'verify ca'
+      shell: |
+        openssl verify /etc/ssl/example_ca/example.pem
+      register: verify_ca
+
+    - name: 'verify_ca stdout'
+      debug:
+        msg: "{{ verify_ca.stdout }}"
