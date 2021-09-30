@@ -19,7 +19,6 @@ services:
         reservations:
           memory: 2048M
     restart: unless-stopped
-    user: "1001:131"
     ports:
       - 8080:8080
     #   - 50000:50000
