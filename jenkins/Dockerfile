@@ -24,6 +24,6 @@ RUN jenkins-plugin-cli --plugins blueocean:1.25.0 docker-workflow:1.26 ssh-agent
     matrix-auth ansicolor slack build-user-vars-plugin workflow-aggregator authorize-project git email-ext
 #RUN jenkins-plugin-cli --plugins ssh-agent ssh-credentials ansicolor workflow-aggregator docker-workflow git \
 #    build-user-vars-plugin matrix-auth:2.6.6 credentials authorize-project email-ext slack
-ENV JAVA_OPTS -Djenkins.install.runSetupWizard=false
+ENV JAVA_OPTS "-Djenkins.install.runSetupWizard=false -Dfile.encoding=UTF-8"
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Sao_Paulo
