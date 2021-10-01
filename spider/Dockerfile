@@ -1,7 +1,9 @@
 FROM gradle:jdk11 as builder
 WORKDIR /git-repo
 COPY . .
-RUN gradle build -i
+RUN chown gradle: /git-repo -R
+USER gradle
+RUN gradle jibBuildTar -Djib.from.image=openjdk:11-jre -Djib.console=plain
 
 FROM openjdk:11-jre
 ARG JAR_FILE=build/libs/*.jar
