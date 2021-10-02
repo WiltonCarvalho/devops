@@ -3,10 +3,6 @@
   gather_facts: no
   vars:
     ansible_python_interpreter: /usr/bin/python3
-  handlers:
-    - name: 'update-ca-certificates'
-      shell: >
-        update-ca-certificates -f
   tasks:
     - name: 'install packages'
       apt:
@@ -54,12 +50,8 @@
       when: ca_check.rc > 0
 
     - name: 'update-ca-certificates'
-      lineinfile:
-        path: /etc/ca-certificates.conf
-        line: '{{ item }}'
-      with_items:
-        - example_ca/example_ca.pem
-      notify: update-ca-certificates
+      shell: |
+        update-ca-certificates -f
       when: ca_check.rc > 0
 
     - name: 'verify ca'
