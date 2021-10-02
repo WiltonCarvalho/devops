@@ -21,7 +21,7 @@ RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor > /u
 USER jenkins
 RUN echo && docker-compose -version && echo && aws --version && echo && docker version || true
 RUN jenkins-plugin-cli --plugins blueocean:1.25.0 docker-workflow:1.26 ssh-agent ssh-credentials credentials \
-    matrix-auth ansicolor slack build-user-vars-plugin workflow-aggregator authorize-project git email-ext
+    matrix-auth ansicolor slack build-user-vars-plugin workflow-aggregator authorize-project git email-ext docker-plugin
 ENV JAVA_OPTS "-Djenkins.install.runSetupWizard=false -Dfile.encoding=UTF-8"
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Sao_Paulo
