@@ -6,9 +6,9 @@ networks:
 services:
   jenkins:
     image: registry.example.com/jenkins
-    # build:
-    #   dockerfile: Dockerfile
-    #   context: .
+    build:
+      dockerfile: Dockerfile
+      context: .
     deploy:
       mode: replicated
       replicas: 1
