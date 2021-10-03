@@ -120,8 +120,12 @@
         dest: "/etc/systemd/system/docker.service.d/override.conf"
         content: |
           [Service]
+          Environment=CA_FILE=/etc/docker/certs.d/ca.pem
+          Environment=CERT_FILE=/etc/docker/certs.d/server-cert.pem
+          Environment=KEY_FILE=/etc/docker/certs.d/server-key.pem
+          Environment=DOCKER_TLS="-H tcp://0.0.0.0:2376 --tlsverify --tlscacert $CA_FILE --tlscert $CERT_FILE --tlskey $KEY_FILE"
           ExecStart=
-          ExecStart=/usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2376 --containerd=/run/containerd/containerd.sock
+          ExecStart=/usr/bin/dockerd -H fd:// $DOCKER_TLS --containerd=/run/containerd/containerd.sock
         mode: 0644
         owner: root
         group: root
@@ -149,12 +153,7 @@
             },
             "storage-driver": "overlay2",
             "live-restore": false,
-            "metrics-addr": "0.0.0.0:9323",
-            "tls": true,
-            "tlscacert": "/etc/docker/certs.d/ca.pem",
-            "tlscert": "/etc/docker/certs.d/server-cert.pem",
-            "tlskey": "/etc/docker/certs.d/server-key.pem",
-            "tlsverify": true
+            "metrics-addr": "0.0.0.0:9323"
           }
           {% endraw %}
         mode: 0644
