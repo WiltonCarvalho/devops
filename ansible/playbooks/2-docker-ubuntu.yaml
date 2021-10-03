@@ -16,6 +16,9 @@
     - name: 'update grub'
       shell: >
         update-grub
+    - name: 'systemctl daemon-reload'
+      shell: >
+        systemctl daemon-reload
   tasks:
     - name: '/etc/default/grub.d/99-cgroup.cfg'
       copy:
@@ -80,7 +83,7 @@
         path: "/etc/systemd/system/docker.service.d/"
         state: directory
 
-    - name: '/etc/systemd/system/docker.service.d/override.conf '
+    - name: '/etc/systemd/system/docker.service.d/override.conf'
       copy:
         dest: "/etc/systemd/system/docker.service.d/override.conf"
         content: |
@@ -90,7 +93,7 @@
         mode: 0644
         owner: root
         group: root
-      notify: update grub
+      notify: systemctl daemon-reload
 
     - name: '/etc/docker/daemon.json'
       copy:
