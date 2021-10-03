@@ -75,6 +75,23 @@
         -out client/cert.pem -extfile /tmp/client.cnf
       when: ca_check.rc > 0
 
+    - name: '/etc/systemd/system/docker.service.d/'
+      file: 
+        path: "/etc/systemd/system/docker.service.d/"
+        state: directory
+
+    - name: '/etc/systemd/system/docker.service.d/override.conf '
+      copy:
+        dest: "/etc/systemd/system/docker.service.d/override.conf"
+        content: |
+          [Service]
+          ExecStart=
+          ExecStart=/usr/bin/dockerd -H unix:///var/run/docker.sock --containerd=/run/containerd/containerd.sock
+        mode: 0644
+        owner: root
+        group: root
+      notify: update grub
+
     - name: '/etc/docker/daemon.json'
       copy:
         dest: "/etc/docker/daemon.json"
