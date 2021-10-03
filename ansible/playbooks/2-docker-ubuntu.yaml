@@ -89,11 +89,13 @@
         content: |
           [Service]
           ExecStart=
-          ExecStart=/usr/bin/dockerd -H unix:///var/run/docker.sock --containerd=/run/containerd/containerd.sock
+          ExecStart=/usr/bin/dockerd --containerd=/run/containerd/containerd.sock
         mode: 0644
         owner: root
         group: root
-      notify: systemctl daemon-reload
+      notify:
+        - systemctl daemon-reload
+        - restart docker
 
     - name: '/etc/docker/daemon.json'
       copy:
@@ -109,7 +111,7 @@
             "storage-driver": "overlay2",
             "live-restore": false,
             "metrics-addr": "0.0.0.0:9323",
-            "hosts": ["tcp://0.0.0.0:2376"],
+            "hosts": ["fd://", "tcp://0.0.0.0:2376"],
             "tls": true,
             "tlscacert": "/etc/docker/certs.d/ca.pem",
             "tlscert": "/etc/docker/certs.d/server-cert.pem",
@@ -120,7 +122,9 @@
         mode: 0644
         owner: root
         group: root
-      notify: restart docker
+      notify:
+        - systemctl daemon-reload
+        - restart docker
 
     - name: 'Add rsyslog 20-docker.conf'
       copy:
