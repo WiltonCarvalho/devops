@@ -123,9 +123,8 @@
           Environment=CA_FILE=/etc/docker/certs.d/ca.pem
           Environment=CERT_FILE=/etc/docker/certs.d/server-cert.pem
           Environment=KEY_FILE=/etc/docker/certs.d/server-key.pem
-          Environment=DOCKER_TLS="-H tcp://0.0.0.0:2376 --tlsverify --tlscacert $CA_FILE --tlscert $CERT_FILE --tlskey $KEY_FILE"
           ExecStart=
-          ExecStart=/usr/bin/dockerd -H fd:// $DOCKER_TLS --containerd=/run/containerd/containerd.sock
+          ExecStart=/usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2376 --tlsverify --tlscacert $CA_FILE --tlscert $CERT_FILE --tlskey $KEY_FILE --containerd=/run/containerd/containerd.sock
         mode: 0644
         owner: root
         group: root
