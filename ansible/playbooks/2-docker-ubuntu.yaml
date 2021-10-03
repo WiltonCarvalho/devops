@@ -19,9 +19,6 @@
     - name: 'update grub'
       shell: >
         update-grub
-    - name: 'systemctl daemon-reload'
-      shell: >
-        systemctl daemon-reload
   tasks:
     - name: '/etc/default/grub.d/99-cgroup.cfg'
       copy:
@@ -128,9 +125,16 @@
         mode: 0644
         owner: root
         group: root
+      register: override_docker
       notify:
-        - systemctl daemon-reload
         - restart docker
+
+    - name: 'systemctl daemon-reload'
+      shell: >
+        systemctl daemon-reload
+      when: override_docker.changed
+      args:
+        warn: false
 
     - name: '/etc/docker/daemon.json'
       copy:
@@ -157,7 +161,6 @@
         owner: root
         group: root
       notify:
-        - systemctl daemon-reload
         - restart docker
 
     - name: 'Add rsyslog 20-docker.conf'
