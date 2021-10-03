@@ -43,15 +43,20 @@
         groups: docker
         append: yes
 
+    - name: '/etc/docker/certs.d'
+      file: 
+        path: "/etc/docker/certs.d"
+        state: directory
+
     - name: 'docker ca check'
-      shell: test -f /etc/docker/ca.pem
+      shell: test -f /etc/docker/certs.d/ca.pem
       register: ca_check
       failed_when: ca_check.rc > 1
       changed_when: ca_check.rc > 0
 
     - name: 'docker ca'
       shell: |
-        cd /etc/docker/
+        cd /etc/docker/certs.d
         openssl genrsa -out ca-key.pem 2048
         openssl req -x509 -new -nodes -key ca-key.pem -days 36500 \
         -out ca.pem -sha256 -subj '/O=Docker/CN=docker ca'
@@ -82,9 +87,9 @@
             "storage-driver": "overlay2",
             "live-restore": false,
             "metrics-addr": "0.0.0.0:9323",
-            "tlscacert": "ca.pem",
-            "tlscert": "server-cert.pem",
-            "tlskey": "server-key.pem",
+            "tlscacert": "/etc/docker/certs.d/ca.pem",
+            "tlscert": "/etc/docker/certs.d/server-cert.pem",
+            "tlskey": "/etc/docker/certs.d/server-key.pem",
             "tlsverify": true,
             "host": "0.0.0.0:2376"
           }
