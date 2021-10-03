@@ -67,6 +67,7 @@
         openssl x509 -req -in server.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -days 36500 \
         -out server-cert.pem -sha256 -extfile /tmp/san.txt
         mkdir client
+        cp ca.pem client
         openssl genrsa -out client/key.pem 2048
         openssl req -subj '/CN=client' -new -key client/key.pem -out client/client.csr
         echo extendedKeyUsage = clientAuth > /tmp/client.cnf
@@ -88,11 +89,12 @@
             "storage-driver": "overlay2",
             "live-restore": false,
             "metrics-addr": "0.0.0.0:9323",
+            "hosts": ["tcp://0.0.0.0:2376"],
+            "tls": true,
             "tlscacert": "/etc/docker/certs.d/ca.pem",
             "tlscert": "/etc/docker/certs.d/server-cert.pem",
             "tlskey": "/etc/docker/certs.d/server-key.pem",
-            "tlsverify": true,
-            "host": "0.0.0.0:2376"
+            "tlsverify": true
           }
           {% endraw %}
         mode: 0644
