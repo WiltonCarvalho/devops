@@ -66,12 +66,12 @@
         echo "subjectAltName=IP:$(ip route get 1.1.1.1 | grep -oP 'src \K\S+'),IP:127.0.0.1,DNS:localhost,DNS:*.example.com" >> /tmp/san.txt
         openssl x509 -req -in server.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -days 36500 \
         -out server-cert.pem -sha256 -extfile /tmp/san.txt
-        mkdir client && cd client
-        openssl genrsa -out key.pem 2048
-        openssl req -subj '/CN=client' -new -key key.pem -out client.csr
+        mkdir client
+        openssl genrsa -out client/key.pem 2048
+        openssl req -subj '/CN=client' -new -key client/key.pem -out client/client.csr
         echo extendedKeyUsage = clientAuth > /tmp/client.cnf
-        openssl x509 -req -days 36500 -sha256 -in client.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial \
-        -out cert.pem -extfile /tmp/client.cnf
+        openssl x509 -req -days 36500 -sha256 -in client/client.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial \
+        -out client/cert.pem -extfile /tmp/client.cnf
       when: ca_check.rc > 0
 
     - name: '/etc/docker/daemon.json'
