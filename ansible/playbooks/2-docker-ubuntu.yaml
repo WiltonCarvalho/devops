@@ -66,6 +66,7 @@
         echo "subjectAltName=IP:$(ip route get 1.1.1.1 | grep -oP 'src \K\S+'),IP:127.0.0.1,DNS:localhost,DNS:*.example.com" >> /tmp/san.txt
         openssl x509 -req -in server.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -days 36500 \
         -out server-cert.pem -sha256 -extfile /tmp/san.txt
+        mkdir client && cd client
         openssl genrsa -out key.pem 2048
         openssl req -subj '/CN=client' -new -key key.pem -out client.csr
         echo extendedKeyUsage = clientAuth > /tmp/client.cnf
