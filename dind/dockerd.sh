@@ -3,7 +3,7 @@ set -e
 rm -rf /var/run/docker.pid
 dockerd $DOCKER_OPTS \
 	--host=unix:///var/run/docker.sock \
-	--host tcp://0.0.0.0:2376 \
+	--host=$DOCKER_HOST \
 	--iptables=true \
 	--ipv6=false \
 	--storage-driver=overlay2 &>/var/log/docker.log &
