@@ -2,7 +2,7 @@
 set -e
 rm -rf /var/run/docker.pid
 
-dockerd \
+dockerd $DOCKER_OPTS \
 	--host=unix:///var/run/docker.sock \
 	--iptables=true \
 	--ipv6=false \
