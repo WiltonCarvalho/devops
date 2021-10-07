@@ -27,7 +27,7 @@ RUN set -ex \
     && docker -v \
     # set up subuid/subgid so that "--userns-remap=default" works out-of-the-box
     && addgroup dockremap \
-    && useradd -g dockremap dockremap \
+    && useradd -g dockremap -s /bin/bash -d /home/dockremap -m dockremap \
     && echo 'dockremap:165536:65536' >> /etc/subuid \
     && echo 'dockremap:165536:65536' >> /etc/subgid \
     && curl -fsSL https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-Linux-x86_64 -o /usr/local/bin/docker-compose \

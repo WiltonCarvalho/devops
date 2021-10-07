@@ -28,9 +28,11 @@ services:
       - /etc/ssl/example_ca/example_ca.pem:/etc/docker/certs.d/registry.example.com/ca.crt
       - /etc/hosts:/etc/hosts
       #- /var/run/docker.sock:/var/run/docker.sock
-      #- /usr/bin/docker:/usr/bin/docker
     environment: 
       - TZ=America/Sao_Paulo
+      # - DOCKER_HOST=tcp://docker:237
+      # - DOCKER_CERT_PATH=/certs/client
+      # - DOCKER_TLS_VERIFY=1
     healthcheck:
       test: curl --fail -s http://localhost:8080/login || exit 1
       interval: 20s

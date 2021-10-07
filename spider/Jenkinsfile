@@ -185,10 +185,11 @@ pipeline {
                         """.stripIndent()
                         sh 'printenv'
                         docker.withRegistry('https://registry.example.com', 'admin-registry') {
-                            sh 'docker-compose --project-name DEV -f docker-compose.yml up -d'
+                            sh 'docker-compose --project-name dev -f docker-compose.yml up -d'
                             sh 'sleep 10'
-                            sh 'docker-compose ps'
-                            sh 'docker-compose logs spider'
+                            sh 'docker ps -f name=spider'
+                            sh 'docker logs --tail 50 spider'
+                            sh 'curl $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' spider):9100/healthcheck'
                         }
                     }
                 }
