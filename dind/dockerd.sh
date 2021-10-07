@@ -1,11 +1,9 @@
 #!/bin/sh
 set -e
 rm -rf /var/run/docker.pid
-DOCKER_OPTS="${DOCKER_OPTS:---host tcp://0.0.0.0:2376 --insecure-registry=registry.example.com}"
-export DOCKER_HOST="${DOCKER_HOST:-tcp://0.0.0.0:2376}"
-
 dockerd $DOCKER_OPTS \
 	--host=unix:///var/run/docker.sock \
+	--host tcp://0.0.0.0:2376 \
 	--iptables=true \
 	--ipv6=false \
 	--storage-driver=overlay2 &>/var/log/docker.log &

@@ -42,3 +42,5 @@ RUN chmod +x /dockerd.sh
 VOLUME /var/lib/docker
 ENTRYPOINT [ "/dockerd.sh" ]
 CMD [ "tail -f /dev/null" ]
+ENV DOCKER_HOST tcp://0.0.0.0:2376
+ENV DOCKER_OPTS --insecure-registry=registry.example.com
