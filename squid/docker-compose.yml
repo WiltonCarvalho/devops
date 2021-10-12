@@ -1,0 +1,43 @@
+version: "3.8"
+networks:
+  proxy:
+    external: 
+      name: proxy
+volumes:
+  squid_data: {}
+services:
+  squid:
+    image: squid
+    build:
+      dockerfile: Dockerfile
+      context: .
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.80'
+          memory: 2048M
+        reservations:
+          memory: 2048M
+    restart: unless-stopped
+    ports:
+      - 3128:3128
+    container_name: squid
+    volumes:
+    - squid_data:/var/spool/squid
+    environment: 
+      - TZ=America/Sao_Paulo
+    # healthcheck:
+    #   test: curl --fail -s http://localhost:8080/login || exit 1
+    #   interval: 20s
+    #   timeout: 5s
+    #   retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "5m"
+        tag: "{{.DaemonName}}.{{.ImageName}}"
+    networks:
+      proxy:

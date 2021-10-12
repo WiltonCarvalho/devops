@@ -10,6 +10,8 @@ services:
     privileged: true
     networks:
       - proxy
+    ports:
+      - 12376:2376
     deploy:
       mode: replicated
       replicas: 1
