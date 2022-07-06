@@ -4,6 +4,8 @@ snap install multipass
 apt install libvirt-daemon-system
 snap connect multipass:libvirt
 multipass set local.driver=libvirt
+echo "  ptrace (read,trace) peer=snap.multipass.multipassd," >> /etc/apparmor.d/local/usr.sbin.libvirtd
+apparmor_parser -r /etc/apparmor.d/usr.sbin.libvirtd
 ```
 
 # Cloud-Init to set Ubuntu User
