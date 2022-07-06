@@ -37,7 +37,7 @@
       vars:
         packages:
         - docker.io
-        #- linux-virtual-hwe-20.04
+        - linux-virtual-hwe-20.04
 
     - name: 'docker-compose checksum'
       shell: >
@@ -108,10 +108,6 @@
         echo extendedKeyUsage = clientAuth > /tmp/client.cnf
         openssl x509 -req -days 36500 -sha256 -in client/client.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial \
         -out client/cert.pem -extfile /tmp/client.cnf
-        echo 'mkdir $HOME/.docker' > client/readme.txt
-        echo 'sudo cp /etc/docker/certs.d/client/*.pem $HOME/.docker' >> client/readme.txt
-        echo 'sudo chown $USER: .docker/*.pem' >> client/readme.txt
-        echo 'export DOCKER_HOST=tcp://localhost:2376 DOCKER_TLS_VERIFY=1' >> client/readme.txt
       when: ca_check.rc > 0
 
     - name: '/etc/systemd/system/docker.service.d/'
@@ -124,11 +120,8 @@
         dest: "/etc/systemd/system/docker.service.d/override.conf"
         content: |
           [Service]
-          Environment=CA_FILE=/etc/docker/certs.d/ca.pem
-          Environment=CERT_FILE=/etc/docker/certs.d/server-cert.pem
-          Environment=KEY_FILE=/etc/docker/certs.d/server-key.pem
           ExecStart=
-          ExecStart=/usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2376 --tlsverify --tlscacert $CA_FILE --tlscert $CERT_FILE --tlskey $KEY_FILE --containerd=/run/containerd/containerd.sock
+          ExecStart=/usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2376 --containerd=/run/containerd/containerd.sock
         mode: 0644
         owner: root
         group: root
@@ -152,11 +145,16 @@
             "exec-opts": ["native.cgroupdriver=systemd"],
             "log-driver": "journald",
             "log-opts": {
-              "tag": "{{.DaemonName}}.{{.Name}}"
+              "tag": "{{.DaemonName}}.{{.ImageName}}"
             },
             "storage-driver": "overlay2",
             "live-restore": false,
-            "metrics-addr": "0.0.0.0:9323"
+            "metrics-addr": "0.0.0.0:9323",
+            "tls": true,
+            "tlscacert": "/etc/docker/certs.d/ca.pem",
+            "tlscert": "/etc/docker/certs.d/server-cert.pem",
+            "tlskey": "/etc/docker/certs.d/server-key.pem",
+            "tlsverify": true
           }
           {% endraw %}
         mode: 0644
@@ -197,3 +195,5 @@
         mode: 0644
         owner: root
         group: root
+
+

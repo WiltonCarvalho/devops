@@ -1,7 +1,8 @@
 version: "3.8"
 networks:
-  gitlab_net:
-    external: false
+  proxy:
+    external: 
+      name: proxy
 services:
   gitlab:
     image: gitlab
@@ -10,6 +11,8 @@ services:
       dockerfile: Dockerfile
       context: .
     deploy:
+      mode: replicated
+      replicas: 1
       resources:
         limits:
           cpus: '0.80'
@@ -18,7 +21,7 @@ services:
           memory: 2048M
     ports:
       - "4222:22"
-      - "80:80"
+      # - "80:80"
       # - "443:443"
     volumes:
       - $PWD/data:/var/opt/gitlab
@@ -26,7 +29,7 @@ services:
       - $PWD/config:/etc/gitlab
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        external_url 'http://gitlab.example.com/'
+        external_url 'https://gitlab.example.com/'
         gitlab_rails['gitlab_shell_ssh_port'] = 4222
         letsencrypt['enable'] = false
         nginx['listen_port'] = 80
@@ -36,8 +39,14 @@ services:
       # registry_nginx['listen_https'] = false
       TZ: America/Sao_Paulo
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "5m"
+        tag: "{{.DaemonName}}.{{.ImageName}}"
     networks:
-      - gitlab_net
+      proxy:
   # gitlab-runner:
   #   image: gitlab/gitlab-runner:alpine
   #   deploy:
