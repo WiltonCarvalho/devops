@@ -1,11 +1,13 @@
+# https://github.com/aws/aws-codebuild-docker-images/blob/master/ubuntu/standard/5.0/Dockerfile
 FROM ubuntu:20.04
 ARG DEBIAN_FRONTEND=noninteractive
 ARG TZ=America/Sao_Paulo
 USER root
-RUN sed -i "s/archive.ubuntu.com/br.archive.ubuntu.com/g" /etc/apt/sources.list && \
-    apt-get -qq update && \
-    apt-get -qq -y install --only-upgrade $( apt-get --just-print upgrade | awk 'tolower($4) ~ /.*security.*/ || tolower($5) ~ /.*security.*/ {print $2}' | sort | uniq ) && \
-    apt-get -qq -y install --no-install-recommends tzdata openssl gnupg2 ca-certificates git curl wget less lynx jq procps psmisc zip unzip iptables iproute2 openssh-client && \
+RUN set -ex \
+    sed -i "s/archive.ubuntu.com/br.archive.ubuntu.com/g" /etc/apt/sources.list && \
+    apt-get -q update && \
+    apt-get -q -y install --only-upgrade $( apt-get --just-print upgrade | awk 'tolower($4) ~ /.*security.*/ || tolower($5) ~ /.*security.*/ {print $2}' | sort | uniq ) && \
+    apt-get -q -y install --no-install-recommends tzdata openssl gnupg2 ca-certificates git curl wget less lynx jq procps psmisc zip unzip iptables iproute2 openssh-client && \
     rm -rf /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb /var/cache/apt/*.bin /var/lib/apt/lists/* || true
 
 RUN echo '\
@@ -16,7 +18,6 @@ Host * \n\
     UserKnownHostsFile=/dev/null \n\
 ' > /etc/ssh/ssh_config.d/custom.conf
 
-# https://github.com/aws/aws-codebuild-docker-images/blob/master/ubuntu/standard/5.0/Dockerfile
 ARG DOCKER_BUCKET="download.docker.com"
 ARG DOCKER_CHANNEL="stable"
 #ARG DIND_COMMIT="3b5fac462d21ca164b3778647420016315289034"
@@ -74,7 +75,8 @@ RUN set -ex \
     && java -version
 
 # Install Trivy
-RUN curl -fsSL https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor > /usr/share/keyrings/trivy-keyring.gpg && \
+RUN set -ex \
+    curl -fsSL https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor > /usr/share/keyrings/trivy-keyring.gpg && \
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/trivy-keyring.gpg] https://aquasecurity.github.io/trivy-repo/deb $(grep VERSION_CODENAME /etc/os-release | cut -d'=' -f 2) main" | tee /etc/apt/sources.list.d/trivy.list && \
     apt-get -qq update && \
     apt-get -qq -y install trivy && \
